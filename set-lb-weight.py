@@ -6,7 +6,7 @@
 import os, socket, sys, commands, memcache
 
 # Let's find the current state of the load-balancer
-SOCKET = '/etc/haproxy/haproxy.sock'
+SOCKET = 'var/run/haproxy.sock'
 status = commands.getstatusoutput('echo "show stat" | socat %s stdio' % SOCKET )
 lines = status[1].split('\n')
 state, servers = {}, {}
