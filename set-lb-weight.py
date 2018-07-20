@@ -6,7 +6,7 @@
 import os, socket, sys, commands, memcache
 
 # Let's find the current state of the load-balancer
-SOCKET = 'var/run/haproxy.sock'
+SOCKET = '/var/run/haproxy.sock'
 status = commands.getstatusoutput('echo "show stat" | socat %s stdio' % SOCKET )
 lines = status[1].split('\n')
 state, servers = {}, {}
@@ -19,6 +19,8 @@ mc = memcache.Client( [ sys.argv[1] ], )
 
 for l in lines:
     vals = l.split(',')
+    if debug:
+      print(vals)
 
     if vals[0].startswith('#') or vals[0] == '':
         continue
@@ -29,7 +31,7 @@ for l in lines:
     elif vals[1] == 'BACKEND':
         end = 'b'
         continue
-
+    print(vals)
     site, hostname, status, weight, code = vals[0], vals[1], vals[17], vals[18], vals[36]
 
     if site not in state:
@@ -45,12 +47,17 @@ for l in lines:
         servers[hostname] = mc.get( 'server-weight-%s' % hostname, ) # What does memcached say?
 
 command = []
-
+print(state)
+print(servers)
 # Let's update the weights, but only where we have a weight for every server in the site
 for site in state.keys():
     ok = True
     for hostname in state[site].keys():
         if hostname not in servers.keys() or not servers[hostname]:
+            if hostname not in servers.keys():
+              print("{} missing(2) from servers".format(hostname))
+            if not servers[hostname]:
+              print("{} missing(1) from servers".format(hostname))
             ok = False
             break
 
